@@ -1,0 +1,28 @@
+# Data files (too large for git)
+data/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+.env/
+
+# VS Code
+.vscode/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Mac system files
+.DS_Store
+
+# Experiment results (optional, можно убрать если хочешь хранить)
+experiments/results/
+
+# Anaconda
+*.egg-info/
+dist/
+build/
