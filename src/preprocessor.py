@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import torch
+from typing import List, Dict
 
 def create_prefixes(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -71,3 +73,75 @@ def create_prefixes(df: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame(columns=['case_id', 'prefix_activities', 'prefix_length', 'next_activity', 'remaining_time'])
     
     return pd.DataFrame(results)
+
+def build_activity_vocab(df: pd.DataFrame) -> dict:
+    """
+    Builds a vocabulary dictionary mapping unique activity names to integer indices.
+    
+    Args:
+        df (pd.DataFrame): DataFrame containing a 'prefix_activities' column with lists of strings.
+        
+    Returns:
+        dict: A dictionary mapping each unique activity name to a unique integer index.
+              Index 0 is reserved for padding and is not included in this mapping.
+    """
+    # Collect all unique activity names from the lists in the 'prefix_activities' column
+    unique_activities = set()
+    
+    for activity_list in df['prefix_activities']:
+        if isinstance(activity_list, list):
+            unique_activities.update(activity_list)
+    
+    # Sort the activities to ensure consistent indexing across runs
+    sorted_activities = sorted(list(unique_activities))
+    
+    # Create the mapping: start index from 1
+    vocab = {activity: idx + 1 for idx, activity in enumerate(sorted_activities)}
+    
+    return vocab
+
+def encode_and_pad(prefixes: List[List[str]], vocab: Dict[str, int], max_len: int) -> torch.Tensor:
+    """
+    Encodes a list of activity name lists into integer indices and pads them to a fixed length.
+    
+    Args:
+        prefixes (List[List[str]]): A list where each element is a list of activity name strings.
+        vocab (Dict[str, int]): A dictionary mapping activity names to integer indices (starting from 1).
+        max_len (int): The maximum sequence length. Sequences shorter than this will be padded with 0s on the left.
+        
+    Returns:
+        torch.Tensor: A 2D tensor of shape (len(prefixes), max_len) with dtype torch.long.
+                      Padding index 0 is used for left-padding.
+    """
+    encoded_sequences = []
+    
+    for prefix in prefixes:
+        # Convert string activities to their corresponding integer indices
+        # If an activity is not in vocab, it defaults to 0 (though typically vocab should cover all inputs)
+        indices = [vocab.get(activity, 0) for activity in prefix]
+        
+        # Calculate current length
+        current_len = len(indices)
+        
+        if current_len > max_len:
+            # Truncate if longer than max_len (taking the last max_len elements usually makes sense for sequences)
+            # Alternatively, you might want to take the first max_len. 
+            # Given "prefix" context, keeping the end or start depends on specific use case. 
+            # Standard practice for variable length padding often truncates the tail or head.
+            # Here we truncate the tail to keep the 'prefix' intact if possible, but strictly speaking
+            # if it's a "prefix", maybe we keep the beginning? 
+            # Let's assume standard truncation to fit max_len (keeping the start is safer for "prefixes").
+            indices = indices[:max_len]
+            current_len = max_len
+            
+        elif current_len < max_len:
+            # Pad with 0s on the LEFT to reach max_len
+            padding_needed = max_len - current_len
+            indices = [0] * padding_needed + indices
+        
+        encoded_sequences.append(indices)
+    
+    # Convert list of lists to a torch tensor
+    tensor = torch.tensor(encoded_sequences, dtype=torch.long)
+    
+    return tensor
