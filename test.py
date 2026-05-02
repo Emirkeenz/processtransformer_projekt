@@ -5,6 +5,7 @@ from src.data_loader import load_event_log
 from src.preprocessor import create_prefixes
 from src.baseline import MostFrequentClassBaseline
 from src.baseline import MeanRemainingTimeBaseline
+from src.evaluate import accuracy, mae, evaluate_by_prefix_length
 
 # 1. Загрузка данных
 df = load_event_log("data/BPI_Challenge_2012.xes.gz")
@@ -41,3 +42,20 @@ print("\n=== Mean Remaining Time Baseline ===")
 print("Mean remaining time (seconds):", baseline_mean.mean_time)
 print("Mean remaining time (days):", round(baseline_mean.mean_time / 86400, 2))
 print("Predictions sample:", time_predictions[:3])
+
+# 5. Metrics
+print("\n=== Evaluate ===")
+
+# Тест accuracy
+acc = accuracy(prefixes['next_activity'].tolist(), predictions)
+print("MFC Accuracy:", round(acc, 4))
+
+# Тест MAE
+mae_score = mae(prefixes['remaining_time'].tolist(), time_predictions)
+print("Mean Baseline MAE (seconds):", round(mae_score, 2))
+print("Mean Baseline MAE (days):", round(mae_score / 86400, 2))
+
+# Тест evaluate_by_prefix_length
+results_df = evaluate_by_prefix_length(prefixes, predictions, time_predictions)
+print("\nResults by prefix length:")
+print(results_df.head(10))
