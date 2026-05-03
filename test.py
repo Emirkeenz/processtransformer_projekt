@@ -1,5 +1,6 @@
 import warnings
 warnings.filterwarnings("ignore")
+import torch
 
 from src.data_loader import load_event_log
 from src.preprocessor import create_prefixes
@@ -8,6 +9,7 @@ from src.baseline import MeanRemainingTimeBaseline
 from src.evaluate import accuracy, mae, evaluate_by_prefix_length
 from src.preprocessor import build_activity_vocab
 from src.preprocessor import encode_and_pad
+from src.model import SelfAttentionBlock
 
 # 1. Загрузка данных
 df = load_event_log("data/BPI_Challenge_2012.xes.gz")
@@ -77,3 +79,13 @@ print("Tensor shape:", encoded.shape)
 print("Dtype:", encoded.dtype)
 print("Sample (first 3 rows):")
 print(encoded[:3])
+
+# 8. SelfAttentionBlock
+print("\n=== SelfAttentionBlock ===")
+block = SelfAttentionBlock(embed_dim=64, num_heads=4, dropout=0.1)
+# Создаём тестовый тензор: batch=2, seq_len=10, embed_dim=64
+x = torch.randn(2, 10, 64)
+output = block(x)
+print("Input shape:", x.shape)
+print("Output shape:", output.shape)
+print("Shapes match:", x.shape == output.shape)
