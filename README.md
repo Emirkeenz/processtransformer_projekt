@@ -11,3 +11,6 @@ conda activate processtransformer
 pip install -r requirements.txt
 python experiments/run_experiments.py
 ```
+
+## LISA Model Version
+All code was generated using LISA (lisa-flash-03-2026) via vibe coding.

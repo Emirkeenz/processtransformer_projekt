@@ -1,0 +1,5 @@
+LISA Model Version: lisa-flash-03-2026
+Date: 22-05-2026
+
+Chat 1 (Baseline): lisa-flash-03-2026
+Chat 2 (ProcessTransformer): lisa-flash-03-2026
