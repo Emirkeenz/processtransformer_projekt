@@ -26,3 +26,6 @@ experiments/results/
 *.egg-info/
 dist/
 build/
+
+# test
+test.py
