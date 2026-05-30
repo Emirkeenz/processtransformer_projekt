@@ -19,8 +19,6 @@ venv/
 # Mac system files
 .DS_Store
 
-# Experiment results (optional, можно убрать если хочешь хранить)
-experiments/results/
 
 # Anaconda
 *.egg-info/
