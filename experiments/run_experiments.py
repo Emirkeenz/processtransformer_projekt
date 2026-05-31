@@ -18,7 +18,8 @@ from src.myktybek_train import train_myktbek_model
 from src.utils import split_by_time, save_results, plot_comparison
 from src.aizhan_lstm_model import LSTMModel
 from src.aizhan_lstm_train import train_lstm, predict_lstm
-
+from src.gru_model import SequenceActivityPredictor
+from src.gru_train import train_epoch as gru_train_epoch
 
 def run_single_dataset(data_path: str, dataset_name: str, output_dir: str, num_epochs: int = 10) -> None:
     """
@@ -277,23 +278,55 @@ def run_single_dataset(data_path: str, dataset_name: str, output_dir: str, num_e
     save_results(lstm_eval_df, 'aizhan_lstm', dataset_name, output_dir)
     print(f"  Saved LSTM results to {output_dir}/aizhan_lstm_{dataset_name}.csv")
 
+    # Step 4c — Train and evaluate GRU model
+    print("\nStep 4c: Training GRU model...")
+
+    gru_model = SequenceActivityPredictor(
+        vocab_size=len(vocab), embed_dim=64, hidden_dim=128
+    ).to(device)
+
+    optimizer = torch.optim.Adam(gru_model.parameters(), lr=1e-3)
+    criterion_activity = torch.nn.CrossEntropyLoss()
+    criterion_time = torch.nn.MSELoss()
+
+    for epoch in range(num_epochs):
+        avg_loss = gru_train_epoch(gru_model, train_loader, criterion_activity, criterion_time, optimizer, device)
+        print(f"Epoch {epoch+1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
+
+    gru_model.eval()
+    gru_activity_preds = []
+    gru_time_preds = []
+
+    with torch.no_grad():
+        for i in range(0, len(encoded_test), 64):
+            batch_x = encoded_test[i:i+64].to(device)
+            activity_logits, time_prediction = gru_model(batch_x)
+            _, predicted_indices = torch.max(activity_logits, dim=1)
+            predicted_names = [idx_to_act.get(int(idx.item()), '') for idx in predicted_indices]
+            gru_activity_preds.extend(predicted_names)
+            times = time_prediction.squeeze(-1).cpu().numpy()
+            gru_time_preds.extend((times * std_val + mean_val).tolist())
+
+    gru_eval_df = evaluate_by_prefix_length(test_df, gru_activity_preds, gru_time_preds)
+    save_results(gru_eval_df, 'ramazan_gru', dataset_name, output_dir)
+    print(f"  Saved GRU results to {output_dir}/ramazan_gru_{dataset_name}.csv")
+
     # Step 5 — Plot comparisons
     print("\nStep 5: Generating comparison plots...")
 
-    # Build results dictionary for accuracy
     results_dict_accuracy = {
         'Statistical Baseline': baseline_eval_df,
         'ProcessTransformer': transformer_eval_df,
         'MyktbekModel': mk_eval_df,
         'LSTM': lstm_eval_df,
+        'GRU': gru_eval_df,
     }
-
 
     # Build results dictionary for MAE (converted to days)
     results_dict_mae_days = {}
     for name, df in results_dict_accuracy.items():
         df_copy = df.copy()
-        df_copy['mae'] = df_copy['mae'] / 86400  # Convert seconds to days
+        df_copy['mae'] = df_copy['mae'] / 86400
         results_dict_mae_days[name] = df_copy
 
     # Plot accuracy comparison
