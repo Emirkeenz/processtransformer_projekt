@@ -10,16 +10,19 @@ class SequenceActivityPredictor(nn.Module):
         self.embed_dim = embed_dim
         self.hidden_dim = hidden_dim
         
+        # Embedding layer for activity indices with padding_idx=0
         self.embedding = nn.Embedding(vocab_size + 1, embed_dim, padding_idx=0)
         
+        # Custom GRU cell with update gate, reset gate, and candidate hidden state
         self.W_z = nn.Linear(embed_dim + hidden_dim, hidden_dim)
         self.W_r = nn.Linear(embed_dim + hidden_dim, hidden_dim)
         self.W_h = nn.Linear(embed_dim + hidden_dim, hidden_dim)
         
+        # Output layers
         self.activity_output = nn.Linear(hidden_dim, vocab_size)
         self.time_output = nn.Linear(hidden_dim, 1)
     
-def forward(self, activity_indices):
+    def forward(self, activity_indices):
         """
         Forward pass processing sequence step by step through GRU.
         
@@ -62,5 +65,4 @@ def forward(self, activity_indices):
         activity_logits = self.activity_output(h)  # (batch_size, vocab_size)
         time_prediction = self.time_output(h)  # (batch_size, 1)
         
-        # Added missing return statement
         return activity_logits, time_prediction
