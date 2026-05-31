@@ -277,19 +277,7 @@ def run_single_dataset(data_path: str, dataset_name: str, output_dir: str, num_e
     # Save LSTM results
     save_results(lstm_eval_df, 'aizhan_lstm', dataset_name, output_dir)
     print(f"  Saved LSTM results to {output_dir}/aizhan_lstm_{dataset_name}.csv")
-
-    # Step 5 — Plot comparisons
-    print("\nStep 5: Generating comparison plots...")
-
-    # Build results dictionary for accuracy
-    results_dict_accuracy = {
-        'Statistical Baseline': baseline_eval_df,
-        'ProcessTransformer': transformer_eval_df,
-        'MyktbekModel': mk_eval_df,
-        'LSTM': lstm_eval_df,
-        'GRU': gru_eval_df,
-    }
-    # Step — Train and evaluate GRU model
+        
     print("\nStep: Training GRU model...")
 
     gru_model = SequenceActivityPredictor(
@@ -336,6 +324,19 @@ def run_single_dataset(data_path: str, dataset_name: str, output_dir: str, num_e
     # Plot MAE comparison (in days)
     plot_comparison(results_dict_mae_days, metric='mae', dataset_name=dataset_name, output_dir=output_dir)
     print(f"  Saved MAE comparison plot (days) to {output_dir}/{dataset_name}_mae_comparison.png")
+
+
+    # Step 5 — Plot comparisons
+    print("\nStep 5: Generating comparison plots...")
+
+    # Build results dictionary for accuracy
+    results_dict_accuracy = {
+        'Statistical Baseline': baseline_eval_df,
+        'ProcessTransformer': transformer_eval_df,
+        'MyktbekModel': mk_eval_df,
+        'LSTM': lstm_eval_df,
+        'GRU': gru_eval_df,
+    }
 
     print(f"\n✓ Completed experiments for {dataset_name}\n")
 
