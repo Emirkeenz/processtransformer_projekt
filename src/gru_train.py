@@ -1,111 +1,54 @@
 import torch
 import torch.nn as nn
-from typing import Tuple, Optional
+import torch.optim as optim
 
-def train_model(
-    model: nn.Module,
-    dataloader: torch.utils.data.DataLoader,
-    epochs: int = 10,
-    learning_rate: float = 1e-3,
-    device: Optional[str] = None
-) -> nn.Module:
-    """
-    Trains the SequenceActivityPredictor model using Adam optimizer.
+def train_epoch(model, dataloader, criterion_activity, criterion_time, optimizer, device):
+    model.train()
+    total_loss = 0.0
+    num_batches = 0
     
-    Args:
-        model (nn.Module): The SequenceActivityPredictor instance to train.
-        dataloader (DataLoader): DataLoader yielding batches with:
-            - activity_indices: (seq_len, batch_size), LongTensor
-            - time_features: (seq_len, batch_size, num_time_features), FloatTensor
-            - activity_labels: (seq_len, batch_size), LongTensor
-            - time_labels: (seq_len, batch_size), FloatTensor
-        epochs (int): Number of training epochs.
-        learning_rate (float): Learning rate for the Adam optimizer.
-        device (str): Device to run training on ('cpu' or 'cuda'). Defaults to auto-detect.
+    for batch in dataloader:
+        activity_indices, activity_labels, time_labels = batch
         
-    Returns:
-        nn.Module: The trained model.
-    """
-    if device is None:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    
-    # Move model to device
-    model = model.to(device)
-    
-    # Define Loss Functions
-    # CrossEntropyLoss expects raw logits (unnormalized) and class indices
-    criterion_activity = nn.CrossEntropyLoss()
-    # MSELoss for regression
-    criterion_time = nn.MSELoss()
-    
-    # Define Optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    
-    print(f"Starting training on {device}...")
-    print(f"Epochs: {epochs}, Learning Rate: {learning_rate}")
-    
-    for epoch in range(epochs):
-        model.train()
-        total_loss = 0.0
-        batch_count = 0
+        activity_indices = activity_indices.to(device)
+        activity_labels = activity_labels.to(device)
+        time_labels = time_labels.to(device)
         
-        for batch_idx, batch in enumerate(dataloader):
-            # Unpack batch
-            # Expected keys based on prompt description, handling both dict and tuple unpacking
-            if isinstance(batch, dict):
-                activity_indices = batch['activity_indices']
-                time_features = batch['time_features']
-                activity_labels = batch['activity_labels']
-                time_labels = batch['time_labels']
-            else:
-                # Assuming order: activity_indices, time_features, activity_labels, time_labels
-                activity_indices, time_features, activity_labels, time_labels = batch
+        activity_logits, time_prediction = model(activity_indices)
+        
+        activity_loss = criterion_activity(activity_logits, activity_labels)
+        time_loss = criterion_time(time_prediction.squeeze(), time_labels)
+        
+        loss = activity_loss + time_loss
+        
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+        total_loss += loss.item()
+        num_batches += 1
+    
+    return total_loss / num_batches if num_batches > 0 else 0.0
+
+
+def evaluate(model, dataloader, criterion_activity, device):
+    model.eval()
+    correct = 0
+    total = 0
+    
+    with torch.no_grad():
+        for batch in dataloader:
+            activity_indices, activity_labels, time_labels = batch
             
-            # Move data to device
             activity_indices = activity_indices.to(device)
-            time_features = time_features.to(device)
             activity_labels = activity_labels.to(device)
-            time_labels = time_labels.to(device)
             
-            # Zero gradients
-            optimizer.zero_grad()
+            activity_logits, _ = model(activity_indices)
             
-            # Forward pass
-            # Outputs: (logits_activity, time_preds)
-            # logits_activity shape: (seq_len, batch_size, vocab_size)
-            # time_preds shape: (seq_len, batch_size, 1)
-            logits_activity, time_preds = model(activity_indices, time_features)
+            _, predicted = torch.max(activity_logits, dim=1)
             
-            # Reshape targets for loss calculation
-            # CrossEntropyLoss expects (N, C) where N is total number of elements (seq_len * batch_size)
-            # We flatten seq_len and batch_size dimensions
-            act_labels_flat = activity_labels.view(-1)          # (seq_len * batch_size,)
-            logit_flat = logits_activity.view(-1, logits_activity.size(-1)) # (seq_len * batch_size, vocab_size)
-            
-            time_labels_flat = time_labels.view(-1, 1)          # (seq_len * batch_size, 1)
-            time_pred_flat = time_preds.view(-1, 1)             # (seq_len * batch_size, 1)
-            
-            # Calculate losses
-            loss_act = criterion_activity(logit_flat, act_labels_flat)
-            loss_time = criterion_time(time_pred_flat, time_labels_flat)
-            
-            # Combined loss (equal weighting, can be adjusted)
-            loss = loss_act + loss_time
-            
-            # Backward pass
-            loss.backward()
-            
-            # Clip gradients to prevent exploding gradients (optional but recommended for RNNs)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
-            
-            # Update weights
-            optimizer.step()
-            
-            total_loss += loss.item()
-            batch_count += 1
-            
-        # Calculate average loss for the epoch
-        avg_loss = total_loss / batch_count
-        print(f"Epoch [{epoch+1}/{epochs}] - Average Loss: {avg_loss:.4f} (Act: {loss_act.item():.4f}, Time: {loss_time.item():.4f})")
-        
-    return model
+            total += activity_labels.size(0)
+            correct += (predicted == activity_labels).sum().item()
+    
+    accuracy = correct / total if total > 0 else 0.0
+    return accuracy
