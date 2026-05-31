@@ -12,6 +12,8 @@ from src.baseline import MostFrequentClassBaseline, MeanRemainingTimeBaseline
 from src.evaluate import evaluate_by_prefix_length
 from src.model import ProcessTransformer
 from src.train import train_model, create_data_loader
+from src.myktybek_model import MyktbekModel
+from src.myktybek_train import train_myktbek_model
 from src.utils import split_by_time, save_results, plot_comparison
 
 
@@ -175,14 +177,59 @@ def run_single_dataset(data_path: str, dataset_name: str, output_dir: str, num_e
     save_results(transformer_eval_df, 'process_transformer', dataset_name, output_dir)
     print(f"  Saved process transformer results to {output_dir}/process_transformer_{dataset_name}.csv")
     
+    # Step 4 — Train and evaluate MyktbekModel
+    print(f"\n--- Training MyktbekModel on {dataset_name} ---")
+
+    myktbek_model = MyktbekModel(
+        vocab_size=len(vocab),
+        embed_dim=64,
+        num_filters=128,
+        num_activities=len(vocab),
+        dropout=0.1
+    )
+
+    train_loader_mk, mean_val_mk, std_val_mk = create_data_loader(
+        train_df, encoded_train, vocab, batch_size=32, shuffle=True
+    )
+
+    train_myktbek_model(
+        myktbek_model,
+        train_loader_mk,
+        num_epochs=num_epochs,
+        learning_rate=1e-3,
+        device=device
+    )
+
+    myktbek_model.eval()
+    mk_activity_preds = []
+    mk_time_preds = []
+
+    with torch.no_grad():
+        for i in range(0, len(encoded_test), 64):
+            batch_tensor = encoded_test[i:i+64].to(device)
+            act_logits, time_out = myktbek_model(batch_tensor)
+            _, pred_indices = torch.max(act_logits, dim=1)
+            mk_activity_preds.extend(pred_indices.tolist())
+            denorm_time = (time_out.cpu().numpy() * std_val_mk) + mean_val_mk
+            mk_time_preds.extend(denorm_time.flatten())
+
+    mk_activity_preds_names = [idx_to_act.get(int(idx), '') for idx in mk_activity_preds]
+
+    mk_eval_df = evaluate_by_prefix_length(test_df, mk_activity_preds_names, mk_time_preds)
+    save_results(mk_eval_df, 'myktbek_cnn', dataset_name, output_dir)
+    print(f"  Saved MyktbekModel results to {output_dir}/myktbek_cnn_{dataset_name}.csv")
+
+
     # Step 4 — Plot comparisons
     print("\nStep 4: Generating comparison plots...")
     
     # Build results dictionary for accuracy
     results_dict_accuracy = {
         'Statistical Baseline': baseline_eval_df,
-        'ProcessTransformer': transformer_eval_df
+        'ProcessTransformer': transformer_eval_df,
+        'MyktbekModel': mk_eval_df,
     }
+
     
     # Build results dictionary for MAE (converted to days)
     results_dict_mae_days = {}
