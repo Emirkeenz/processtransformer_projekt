@@ -17,7 +17,7 @@ def train_epoch(model, dataloader, criterion_activity, criterion_time, optimizer
         activity_logits, time_prediction = model(activity_indices)
         
         activity_loss = criterion_activity(activity_logits, activity_labels)
-        time_loss = criterion_time(time_prediction.squeeze(), time_labels)
+        time_loss = criterion_time(time_prediction.squeeze(), time_labels.squeeze())
         
         loss = activity_loss + time_loss
         

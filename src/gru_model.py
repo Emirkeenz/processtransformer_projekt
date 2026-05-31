@@ -10,7 +10,7 @@ class SequenceActivityPredictor(nn.Module):
         self.embed_dim = embed_dim
         self.hidden_dim = hidden_dim
         
-        self.embedding = nn.Embedding(vocab_size, embed_dim)
+        self.embedding = nn.Embedding(vocab_size + 1, embed_dim, padding_idx=0)
         
         self.W_z = nn.Linear(embed_dim + hidden_dim, hidden_dim)
         self.W_r = nn.Linear(embed_dim + hidden_dim, hidden_dim)
