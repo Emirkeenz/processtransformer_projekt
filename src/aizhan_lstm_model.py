@@ -44,7 +44,5 @@ class LSTMModel(nn.Module):
         activity_logits = self.activity_head(last_step)  # (batch_size, num_activities)
         time_pred = self.time_head(last_step)  # (batch_size, 1)
 
-        # Squeeze time_pred to (batch_size,)
-        time_pred = time_pred.squeeze(-1)
-
+        # Note: time_pred is NOT squeezed here to maintain shape (batch_size, 1) for training loss compatibility
         return activity_logits, time_pred

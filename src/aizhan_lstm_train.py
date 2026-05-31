@@ -60,6 +60,7 @@ def predict_lstm(model, data_loader, device, time_mean, time_std):
             all_activities.append(pred_activities)
 
             # Denormalize time predictions: pred * std + mean
+            # Squeeze here since time_pred comes out as (batch, 1) from model
             denormalized_times = (time_pred.squeeze(-1).cpu().numpy() * time_std) + time_mean
             all_times.append(denormalized_times)
 
