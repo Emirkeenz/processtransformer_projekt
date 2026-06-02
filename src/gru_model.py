@@ -55,7 +55,7 @@ class SequenceActivityPredictor(nn.Module):
             r = torch.sigmoid(self.W_r(concat))
             
             # Candidate hidden state
-            r_concat = torch.cat([x_t, r * h], dim=1)  # (batch_size, embed_dim + hidden_dim)
+            r_concat = torch.cat([x_t, r_h], dim=1)  # (batch_size, embed_dim + hidden_dim)
             h_tilde = torch.tanh(self.W_h(r_concat))
             
             # New hidden state
