@@ -20,6 +20,8 @@ from src.aizhan_lstm_model import LSTMModel
 from src.aizhan_lstm_train import train_lstm, predict_lstm
 from src.gru_model import SequenceActivityPredictor
 from src.gru_train import train_epoch as gru_train_epoch
+from src.aizhan_retain_model import RETAINModel
+from src.aizhan_retain_train import train_retain, predict_retain
 
 def run_single_dataset(data_path: str, dataset_name: str, output_dir: str, num_epochs: int = 10) -> None:
     """
@@ -311,6 +313,52 @@ def run_single_dataset(data_path: str, dataset_name: str, output_dir: str, num_e
     save_results(gru_eval_df, 'ramazan_gru', dataset_name, output_dir)
     print(f"  Saved GRU results to {output_dir}/ramazan_gru_{dataset_name}.csv")
 
+    # Step 4d — Train and evaluate RETAIN model
+    print("\nStep 4d: Training RETAIN model...")
+
+    retain_model = RETAINModel(vocab_size=len(vocab)).to(device)
+
+    retain_losses = train_retain(
+        retain_model,
+        train_loader,
+        num_epochs=num_epochs,
+        lr=1e-3,
+        device=device
+    )
+    print(f"  RETAIN training completed. Final loss: {retain_losses[-1]:.4f}")
+
+    # Create test DataLoader for RETAIN
+    test_loader_r, _, _ = create_data_loader(
+        test_df,
+        encoded_test,
+        vocab,
+        batch_size=64,
+        shuffle=False
+    )
+
+    # Predict using RETAIN
+    retain_activity_array, retain_time_array = predict_retain(
+        retain_model,
+        test_loader_r,
+        device,
+        mean_val,
+        std_val
+    )
+
+    # Map indices to activity names
+    retain_activity_preds = [idx_to_act.get(int(idx), '') for idx in retain_activity_array]
+
+    # Evaluate RETAIN model
+    retain_eval_df = evaluate_by_prefix_length(
+        test_df,
+        retain_activity_preds,
+        retain_time_array.tolist()
+    )
+
+    # Save RETAIN results
+    save_results(retain_eval_df, 'aizhan_retain', dataset_name, output_dir)
+    print(f"  Saved RETAIN results to {output_dir}/aizhan_retain_{dataset_name}.csv")
+
     # Step 5 — Plot comparisons
     print("\nStep 5: Generating comparison plots...")
 
@@ -320,6 +368,7 @@ def run_single_dataset(data_path: str, dataset_name: str, output_dir: str, num_e
         'MyktbekModel': mk_eval_df,
         'LSTM': lstm_eval_df,
         'GRU': gru_eval_df,
+        'RETAIN': retain_eval_df,
     }
 
     # Build results dictionary for MAE (converted to days)
