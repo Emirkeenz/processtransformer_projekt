@@ -16,8 +16,6 @@ from src.train import train_model, create_data_loader
 from src.myktybek_model import MyktbekModel
 from src.myktybek_train import train_myktbek_model
 from src.utils import split_by_time, save_results, plot_comparison
-from src.aizhan_lstm_model import LSTMModel
-from src.aizhan_lstm_train import train_lstm, predict_lstm
 from src.gru_model import SequenceActivityPredictor
 from src.gru_train import train_epoch as gru_train_epoch
 from src.aizhan_retain_model import RETAINModel
@@ -225,61 +223,6 @@ def run_single_dataset(data_path: str, dataset_name: str, output_dir: str, num_e
     save_results(mk_eval_df, 'myktbek_cnn', dataset_name, output_dir)
     print(f"  Saved MyktbekModel results to {output_dir}/myktbek_cnn_{dataset_name}.csv")
 
-    # Step 4: Training LSTM model
-    print("\nStep 4: Training LSTM model...")
-
-    # Instantiate LSTM model
-    lstm_model = LSTMModel(
-        vocab_size=len(vocab),
-        embed_dim=64,
-        hidden_size=128,
-        num_layers=2,
-        num_activities=len(vocab),
-        dropout=0.2
-    ).to(device)
-
-    # Train LSTM using existing train_loader
-    lstm_losses = train_lstm(
-        lstm_model,
-        train_loader,
-        num_epochs=num_epochs,
-        lr=1e-3,
-        device=device
-    )
-    print(f"  LSTM training completed. Final loss: {lstm_losses[-1]:.4f}")
-
-    # Create test DataLoader for inference
-    test_loader, _, _ = create_data_loader(
-        test_df,
-        encoded_test,
-        vocab,
-        batch_size=64,
-        shuffle=False
-    )
-
-    # Predict using LSTM
-    pred_activities_array, pred_times_array = predict_lstm(
-        lstm_model,
-        test_loader,
-        device,
-        mean_val,
-        std_val
-    )
-
-    # Map integer indices to activity names
-    lstm_activity_preds = [idx_to_act.get(int(idx), '') for idx in pred_activities_array]
-
-    # Evaluate LSTM model
-    lstm_eval_df = evaluate_by_prefix_length(
-        test_df,
-        lstm_activity_preds,
-        pred_times_array.tolist()
-    )
-
-    # Save LSTM results
-    save_results(lstm_eval_df, 'aizhan_lstm', dataset_name, output_dir)
-    print(f"  Saved LSTM results to {output_dir}/aizhan_lstm_{dataset_name}.csv")
-
     # Step 4c — Train and evaluate GRU model
     print("\nStep 4c: Training GRU model...")
 
@@ -366,7 +309,6 @@ def run_single_dataset(data_path: str, dataset_name: str, output_dir: str, num_e
         'Statistical Baseline': baseline_eval_df,
         'ProcessTransformer': transformer_eval_df,
         'MyktbekModel': mk_eval_df,
-        'LSTM': lstm_eval_df,
         'GRU': gru_eval_df,
         'RETAIN': retain_eval_df,
     }
