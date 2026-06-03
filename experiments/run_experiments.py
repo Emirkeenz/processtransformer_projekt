@@ -83,6 +83,20 @@ def run_single_dataset(data_path: str, dataset_name: str, output_dir: str, num_e
     mean_rt_baseline.fit(train_df)
     mean_rt_preds = mean_rt_baseline.predict(test_df)
 
+    # --- NEW: Save raw predictions for Statistical Baseline ---
+    baseline_raw_df = pd.DataFrame({
+        'case_id': test_df['case_id'],
+        'prefix_length': test_df['prefix_length'],
+        'true_next_activity': test_df['next_activity'],
+        'predicted_next_activity': mfc_activity_preds,
+        'true_remaining_time_seconds': test_df['remaining_time'],
+        'predicted_remaining_time_seconds': mean_rt_preds
+    })
+    baseline_raw_path = os.path.join(output_dir, f'statistical_baseline_{dataset_name}_raw_predictions.csv')
+    baseline_raw_df.to_csv(baseline_raw_path, index=False)
+    print(f"  Saved statistical baseline raw predictions to {baseline_raw_path}")
+    # -----------------------------------------------
+
     # Evaluate statistical baselines
     baseline_eval_df = evaluate_by_prefix_length(
         test_df,
@@ -170,6 +184,20 @@ def run_single_dataset(data_path: str, dataset_name: str, output_dir: str, num_e
                 pred_seconds = val * std_val + mean_val
                 pt_time_preds.append(pred_seconds)
 
+    # --- NEW: Save raw predictions for Process Transformer ---
+    pt_raw_df = pd.DataFrame({
+        'case_id': test_df['case_id'],
+        'prefix_length': test_df['prefix_length'],
+        'true_next_activity': test_df['next_activity'],
+        'predicted_next_activity': pt_activity_preds,
+        'true_remaining_time_seconds': test_df['remaining_time'],
+        'predicted_remaining_time_seconds': pt_time_preds
+    })
+    pt_raw_path = os.path.join(output_dir, f'process_transformer_{dataset_name}_raw_predictions.csv')
+    pt_raw_df.to_csv(pt_raw_path, index=False)
+    print(f"  Saved process transformer raw predictions to {pt_raw_path}")
+    # -------------------------------------------------------
+
     # Evaluate transformer model
     transformer_eval_df = evaluate_by_prefix_length(
         test_df,
@@ -219,6 +247,20 @@ def run_single_dataset(data_path: str, dataset_name: str, output_dir: str, num_e
 
     mk_activity_preds_names = [idx_to_act.get(int(idx), '') for idx in mk_activity_preds]
 
+    # --- NEW: Save raw predictions for MyktbekModel ---
+    mk_raw_df = pd.DataFrame({
+        'case_id': test_df['case_id'],
+        'prefix_length': test_df['prefix_length'],
+        'true_next_activity': test_df['next_activity'],
+        'predicted_next_activity': mk_activity_preds_names,
+        'true_remaining_time_seconds': test_df['remaining_time'],
+        'predicted_remaining_time_seconds': mk_time_preds
+    })
+    mk_raw_path = os.path.join(output_dir, f'myktbek_cnn_{dataset_name}_raw_predictions.csv')
+    mk_raw_df.to_csv(mk_raw_path, index=False)
+    print(f"  Saved MyktbekModel raw predictions to {mk_raw_path}")
+    # ----------------------------------------------
+
     mk_eval_df = evaluate_by_prefix_length(test_df, mk_activity_preds_names, mk_time_preds)
     save_results(mk_eval_df, 'myktbek_cnn', dataset_name, output_dir)
     print(f"  Saved MyktbekModel results to {output_dir}/myktbek_cnn_{dataset_name}.csv")
@@ -251,6 +293,20 @@ def run_single_dataset(data_path: str, dataset_name: str, output_dir: str, num_e
             gru_activity_preds.extend(predicted_names)
             times = time_prediction.squeeze(-1).cpu().numpy()
             gru_time_preds.extend((times * std_val + mean_val).tolist())
+
+    # --- NEW: Save raw predictions for GRU Model ---
+    gru_raw_df = pd.DataFrame({
+        'case_id': test_df['case_id'],
+        'prefix_length': test_df['prefix_length'],
+        'true_next_activity': test_df['next_activity'],
+        'predicted_next_activity': gru_activity_preds,
+        'true_remaining_time_seconds': test_df['remaining_time'],
+        'predicted_remaining_time_seconds': gru_time_preds
+    })
+    gru_raw_path = os.path.join(output_dir, f'ramazan_gru_{dataset_name}_raw_predictions.csv')
+    gru_raw_df.to_csv(gru_raw_path, index=False)
+    print(f"  Saved GRU raw predictions to {gru_raw_path}")
+    # ------------------------------------------
 
     gru_eval_df = evaluate_by_prefix_length(test_df, gru_activity_preds, gru_time_preds)
     save_results(gru_eval_df, 'ramazan_gru', dataset_name, output_dir)
@@ -290,6 +346,20 @@ def run_single_dataset(data_path: str, dataset_name: str, output_dir: str, num_e
 
     # Map indices to activity names
     retain_activity_preds = [idx_to_act.get(int(idx), '') for idx in retain_activity_array]
+
+    # --- NEW: Save raw predictions for RETAIN Model ---
+    retain_raw_df = pd.DataFrame({
+        'case_id': test_df['case_id'],
+        'prefix_length': test_df['prefix_length'],
+        'true_next_activity': test_df['next_activity'],
+        'predicted_next_activity': retain_activity_preds,
+        'true_remaining_time_seconds': test_df['remaining_time'],
+        'predicted_remaining_time_seconds': retain_time_array.tolist()
+    })
+    retain_raw_path = os.path.join(output_dir, f'aizhan_retain_{dataset_name}_raw_predictions.csv')
+    retain_raw_df.to_csv(retain_raw_path, index=False)
+    print(f"  Saved RETAIN raw predictions to {retain_raw_path}")
+    # ---------------------------------------------
 
     # Evaluate RETAIN model
     retain_eval_df = evaluate_by_prefix_length(
