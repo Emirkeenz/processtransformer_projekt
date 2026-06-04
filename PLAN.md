@@ -5,70 +5,69 @@
 **Курс:** Process Mining, Hof University of Applied Sciences  
 **Преподаватель:** Prof. Dr. Lars Ackermann-Igl  
 **Тип экзамена:** Term Paper + Poster + Video + Peer Review  
-**Группа:** Emir Orozbekov, Myktybek Abdykayimov, Ramazan Batanov  
-*(Фактически работает один Emir — все вклады помечать именем!)*
+**Группа:** Emir Orozbekov, Myktybek Abdykayimov, Ramazan Batanov, Aizhan Kozhamuratova
 
 **Тема:**  
 > *Transformer-Based Multi-Task Predictive Business Process Monitoring: A Re-Implementation and Empirical Evaluation of ProcessTransformer on Real-Life Event Logs*
 
-**Реализуемый алгоритм:** ProcessTransformer (Bukhsh et al., 2021) — Transformer-based модель для PBPM. Модель **обучается на event log данных** (не prompt engineering) — это соответствует требованию профессора о том, что решение должно включать обучение AI модели.
+**Датасеты:** BPI Challenge 2012, BPI Challenge 2017 (XES формат)
 
-**Датасеты:** BPI Challenge 2012, BPI Challenge 2017 (event logs, XES формат)
-
-**Baselines:**
-- Most Frequent Class (MFC) — для предсказания следующей активности (classification)
-- Mean Remaining Time — для предсказания оставшегося времени (regression)
+**Подходы:**
+- Statistical Baseline (MFC + Mean RT) — Emir
+- ProcessTransformer (Bukhsh et al., 2021) — Emir
+- CNN (Pasquadibisceglie et al., 2019) — Myktybek
+- GRU (custom) — Ramazan
+- RETAIN (Choi et al., 2016) — Aizhan
 
 ---
 
 ## Требования профессора (критически важно)
 
 ### Правила vibe coding (LISA)
-- Весь код пишется **только через LISA** (lisa-flash-03-2026) — университетский AI
-- **Нельзя вручную редактировать код** — даже мелкие исправления делаются только через LISA-промпты
-- **Нельзя передавать название алгоритма напрямую** — нужно описывать логику шаг за шагом
-- Каждый промпт — **один логический шаг** (одна функция / один модуль)
-- Нельзя вставлять в LISA чужой код или копипасту из статей
-- `pm4py` разрешён **только** для: загрузки XES → pd.DataFrame и реализации/конвертации Petri Net
-- Реализация разбита на **3 отдельных LISA-чата**
+- Весь код пишется **только через LISA** (lisa-flash-03-2026)
+- Нельзя вручную редактировать код — только через corrective LISA-промпты
+- Нельзя называть алгоритм по имени в промпте
+- Каждый промпт — один логический шаг
+- `pm4py` только для: загрузки XES → pd.DataFrame и Petri Net
 
-### Требование: AI модель должна обучаться на данных
-Профессор уточнил (Moodle announcement): подход, основанный исключительно на prompt engineering LLM для предсказания, **не допускается**. ProcessTransformer соответствует требованию — он обучается на event log данных с нуля (нет fine-tuning, нет prompt engineering, есть полноценный training loop).
-
-### Требование: цитирование
-Профессор уточнил: использовать **IEEE citation style** (номерные ссылки [1], [2]...), но логику расстановки цитат — как в APA: каждое утверждение, не являющееся собственным выводом, должно иметь ссылку. Если целый абзац основан на одном источнике — одна ссылка в конце. Подробнее: https://apastyle.apa.org/style-grammar-guidelines/citations/appropriate-citation
-
-### Структура LISA-чатов
-- **Chat 1:** Baseline техники + загрузка данных
-- **Chat 2:** ProcessTransformer (основная модель)
-- **Chat 3:** Experiment pipeline (split, save, plot)
+### Распределение ролей (n=4)
+Профессор требует: 1 студент = только baseline+framework, 3 студента = по одной технике.
+Emir делает и baseline+framework И ProcessTransformer — профессор указал на это. В paper нужно чётко разграничить authorship.
 
 ### Deliverables (дедлайн **7 июня 2026, 23:59**)
-Всё сдаётся **одним ZIP через Moodle** — поздние сдачи не принимаются:
+ZIP через Moodle:
 1. `term_paper.pdf` — 6–8 стр., IEEE two-column
 2. `poster.pdf` — DIN A0, 300–500 слов
-3. `video.mp4` (или ссылка) — 10 минут
-4. `chat_exports/` — PDF + JSON всех 3 LISA-чатов
+3. `video.mp4` — 10 минут строго, все 4 участника голосом
+4. `chat_exports/` — PDF + JSON всех LISA-чатов каждого участника
 5. `src/` — весь код
-6. `experiments/results/` — CSV + PNG с результатами
+6. `experiments/results/` — CSV + PNG
 7. `LISA_MODEL_VERSION.txt`
-8. `run_experiments.py` — должен воспроизводить эксперименты одной командой
+8. `run_experiments.py`
 
-**Дедлайн Peer Review:** 21 июня 2026, 23:59
+**Peer Review:** 21 июня 2026, 23:59
 
-### Важные требования к paper
-- Каждый вклад участника **помечается именем** (иначе не засчитывается)
-- IEEE two-column template (шаблон на Moodle)
-- Обязательный раздел **Experience Report** — анализ LISA-чатов
-- Appendix: все экспортированные LISA-чаты (не считается в 6–8 стр.)
-- Версия LISA задокументирована: `lisa-flash-03-2026`
+---
 
-### Требования к video
-- 10 минут **строго**
-- Не обязательно показывать лицо, но голос должен идентифицировать спикера
-- Все участники группы должны присутствовать голосом (Emir один — это ок)
-- Рекомендуется фокус на: результаты экспериментов + experience с vibe coding
-- Кратко: датасеты, реализованные подходы, experiment setup — затем основной фокус
+## Статус проекта (на 2 июня 2026)
+
+| Задача | Статус |
+|--------|--------|
+| Chat 1 (Emir): data_loader, preprocessor, baseline, evaluate | ✅ Done |
+| Chat 2 (Emir): ProcessTransformer, train | ✅ Done |
+| Chat 3 (Emir): utils, run_experiments.py | ✅ Done |
+| CNN (Myktybek) | ✅ Done |
+| GRU (Ramazan) | ⚠️ Баг r_concat исправляется |
+| RETAIN (Aizhan) | ✅ Done |
+| run_experiments.py полный (все модели) | ✅ Done |
+| **Финальный запуск экспериментов** | ❌ **TODO ← СЛЕДУЮЩИЙ ШАГ** |
+| Term Paper | ❌ TODO |
+| Poster | ❌ TODO |
+| Video | ❌ TODO |
+| Экспорт LISA чатов | ❌ TODO |
+| README.md | ❌ TODO |
+| ZIP + Moodle | ❌ TODO |
+| Peer Review | ❌ TODO |
 
 ---
 
@@ -76,121 +75,75 @@
 
 ```
 project-root/
-├── data/                            # НЕ в git (.gitignore)
-│   ├── BPI_Challenge_2012.xes
-│   └── BPI_Challenge_2017.xes
+├── data/                              # НЕ в git
+│   ├── BPI_Challenge_2012.xes.gz
+│   └── BPI_Challenge_2017.xes.gz
 ├── src/
-│   ├── data_loader.py               ✅ DONE
-│   ├── preprocessor.py              ✅ DONE
-│   ├── baseline.py                  ✅ DONE
-│   ├── evaluate.py                  ✅ DONE
-│   ├── model.py                     ✅ DONE
-│   └── train.py                     ✅ DONE
+│   ├── data_loader.py                 ✅ Emir
+│   ├── preprocessor.py                ✅ Emir
+│   ├── baseline.py                    ✅ Emir
+│   ├── evaluate.py                    ✅ Emir
+│   ├── model.py                       ✅ Emir (ProcessTransformer)
+│   ├── train.py                       ✅ Emir
+│   ├── utils.py                       ✅ Emir (split, save, plot)
+│   ├── myktybek_model.py              ✅ Myktybek (CNN)
+│   ├── myktybek_train.py              ✅ Myktybek
+│   ├── gru_model.py                   ⚠️ Ramazan (баг исправляется)
+│   ├── gru_train.py                   ✅ Ramazan
+│   ├── aizhan_retain_model.py         ✅ Aizhan (RETAIN)
+│   └── aizhan_retain_train.py         ✅ Aizhan
 ├── experiments/
-│   ├── run_experiments.py           ✅ DONE
-│   └── results/                     ✅ DONE (результаты сохранены)
-├── src/utils.py                     ✅ DONE (split, save, plot)
+│   ├── run_experiments.py             ✅ все 4 модели
+│   └── results/                       ✅ в git (предварительные данные)
 ├── chat_exports/
-│   ├── chat1_baseline.pdf/.json     ❌ TODO (экспортировать из LISA)
-│   ├── chat2_model.pdf/.json        ❌ TODO
-│   └── chat3_experiments.pdf/.json  ❌ TODO
-├── LISA_MODEL_VERSION.txt           ✅ DONE
-├── .gitignore                       ✅ DONE
-└── README.md                        ❌ TODO
+│   ├── emir/                          ❌ TODO
+│   ├── myktybek/                      ❌ TODO
+│   ├── ramazan/                       ❌ TODO
+│   └── aizhan/                        ❌ TODO
+├── LISA_MODEL_VERSION.txt             ✅ Done
+├── README.md                          ❌ TODO
+└── .gitignore                         ✅ Done
 ```
 
 ---
 
-## Что уже сделано (детально)
+## Детали реализации
 
-### Chat 1 — Baseline (ЗАВЕРШЁН ✅)
+### Emir — Chat 1 (Baseline + Data)
+| Файл | Что делает |
+|------|-----------|
+| `data_loader.py` | XES → DataFrame, COMPLETE filter с fallback (case-insensitive → no filter) |
+| `preprocessor.py` | Prefix generation, vocabulary (1..N, 0=pad), encode_and_pad |
+| `baseline.py` | MostFrequentClassBaseline, MeanRemainingTimeBaseline |
+| `evaluate.py` | accuracy(), mae(), evaluate_by_prefix_length() |
 
-| Файл | Что делает | Статус |
-|------|-----------|--------|
-| `data_loader.py` | Загружает XES через pm4py, фильтрует COMPLETE lifecycle events (~164K events) | ✅ |
-| `preprocessor.py` | Генерирует все префиксы трейсов (~151K префиксов) | ✅ |
-| `baseline.py` | MFC accuracy: **~15.83%** · Mean RT MAE: **~9.64 days** | ✅ |
-| `evaluate.py` | Метрики: accuracy, MAE | ✅ |
+### Emir — Chat 2 (ProcessTransformer)
+- SelfAttentionBlock: MultiheadAttention + residual + LayerNorm, batch_first=True
+- ProcessTransformer: Embedding(vocab_size+1) → attention stack → mean pool → 2 heads
+- ~36,632 параметров
+- train.py: Adam, CrossEntropyLoss + MSELoss, normalized RT, MPS support
 
-**Ключевые числа:**
-- Событий после фильтрации: ~164,000
-- Префиксов: ~151,419
-- Max prefix length: 95
-- MFC Baseline Accuracy: ~15.83%
-- Mean Remaining Time MAE: ~9.64 days
+### Emir — Chat 3 (Experiments)
+- split_by_time: 80/20 temporal split по case order
+- save_results: CSV в experiments/results/
+- plot_comparison: matplotlib линейные графики по prefix length
+- run_experiments.py: оркестрация всех моделей
 
-### Chat 2 — ProcessTransformer (ЗАВЕРШЁН ✅)
+### Myktybek — CNN
+- MyktbekModel: Embedding → 3 параллельных Conv1d (kernel 3/5/7) → BN → ReLU → MaxPool → concat → 2 heads
+- Совместим с общим DataLoader (batch, seq_len)
 
-| Компонент | Детали | Статус |
-|-----------|--------|--------|
-| Vocabulary | 23 активности | ✅ |
-| `encode_and_pad` | Padded tensors (151,419 × 95), dtype int64 | ✅ |
-| `SelfAttentionBlock` | MultiheadAttention + residual + LayerNorm, batch_first=True | ✅ |
-| `ProcessTransformer` | ~36,632 параметров, embedding + attention stack + 2 heads | ✅ |
-| `train.py` | Adam, CrossEntropyLoss + MSELoss (normalized RT), MPS backend | ✅ |
+### Ramazan — GRU
+- SequenceActivityPredictor: custom GRU cell (W_z, W_r, W_h) → 2 heads
+- **Текущий баг:** r_concat использует `r * x_t` вместо `r * h` → shape mismatch (128 vs 64) → исправляется
 
-**Архитектура:**
-- Embedding: (vocab_size+1) × embed_dim, padding_idx=0
-- Stack: nn.ModuleList из SelfAttentionBlock'ов
-- Output head 1: Linear → num_activities (next activity classification)
-- Output head 2: Linear → 1 (remaining time regression)
-- Pooling: mean over sequence dimension
-
-**Важно:** remaining time нормализован перед обучением (иначе MSE нестабилен)
-
-### Chat 3 — Experiment Pipeline (ЗАВЕРШЁН ✅)
-
-| Функция | Детали | Статус |
-|---------|--------|--------|
-| `split_by_time` | 80/20 temporal split → ~123,880 train / ~27,539 test | ✅ |
-| `save_results` | CSV в `experiments/results/` | ✅ |
-| `plot_comparison` | matplotlib сравнение baseline vs model | ✅ |
-
-**Производительность:** ~1m45s на эпоху на M1 MPS
+### Aizhan — RETAIN
+- RETAINModel: Embedding → reversed sequence → GRU_alpha (scalar weights) + GRU_beta (vector weights) → context = sum(alpha * beta) → 2 heads
+- Отличие от оригинала: context не умножается на оригинальные embeddings (упрощение LISA)
 
 ---
 
-## Что ещё нужно сделать
-
-### 1. Тиммейты: добавить свои техники ← СЛЕДУЮЩИЙ ШАГ
-Myktybek и Ramazan реализуют свои PBPM-техники через LISA (каждый в своём чате).
-Свои файлы кладут в `src/`. Потом добавляют блок в `run_experiments.py` через корректирующий промпт в Chat 3.
-
-### 2. Term Paper (6–8 стр., IEEE two-column)
-Структура:
-1. Abstract (~150 слов)
-2. Introduction
-3. Background (PBPM pipeline, Transformer, prefix-based approach)
-4. Methodology (baseline + ProcessTransformer, детали реализации)
-5. Experiment Setup (датасеты, метрики, split strategy)
-6. Results & Discussion (таблицы + графики из экспериментов)
-7. **Experience Report** ← special ingredient (анализ LISA-чатов)
-8. Conclusion
-9. References (IEEE стиль, [1]...[6])
-10. Appendix: LISA-чаты (не в лимит 6–8 стр.)
-
-**Про цитирование в paper:** IEEE стиль [1], логика расстановки — как APA. Каждое фактическое утверждение со ссылкой. Цитат дословных избегать, парафраз — норма в CS.
-
-### 4. Poster (Canva, DIN A0)
-- 300–500 слов, высокий контраст
-- Акцент: результаты + GenAI/vibe coding insights
-- Экспорт PDF
-
-### 5. Video (10 минут)
-- Лицо необязательно, голос обязателен
-- Структура: краткое intro (датасет, подходы, setup) → основной фокус на результаты и experience с LISA
-- Строго 10 минут
-
-### 6. Экспорт LISA-чатов
-Экспортировать Chat 1, 2, 3 из LISA как PDF + JSON → `chat_exports/`
-
-### 7. ZIP и сдача через Moodle (до 7 июня 23:59)
-
-### 8. Peer Review (до 21 июня 23:59)
-
----
-
-## Результаты экспериментов (31 мая 2026)
+## Предварительные результаты (31 мая 2026, только ProcessTransformer)
 
 ### BPI Challenge 2012
 | Метрика | Statistical Baseline | ProcessTransformer |
@@ -198,9 +151,8 @@ Myktybek и Ramazan реализуют свои PBPM-техники через L
 | Avg Accuracy | 8.79% | **63.08%** |
 | Avg MAE | 9.47 days | **4.88 days** |
 
-**Данные:** 164,506 events · 151,419 prefixes · vocab 23 · max_len 95  
-**Split:** 123,880 train / 27,539 test  
-**Training:** 10 epochs · final loss 1.3571 · ~1m45s/epoch on M1 MPS
+164,506 events · 151,419 prefixes · vocab 23 · max_len 95  
+Train 123,880 / Test 27,539 · 10 epochs · final loss 1.3571
 
 ### BPI Challenge 2017
 | Метрика | Statistical Baseline | ProcessTransformer |
@@ -208,41 +160,92 @@ Myktybek и Ramazan реализуют свои PBPM-техники через L
 | Avg Accuracy | 3.74% | **75.17%** |
 | Avg MAE | 13.19 days | **4.91 days** |
 
-**Данные:** 475,306 events (no lifecycle filter — BPI 2017 не имеет COMPLETE тега) · 443,797 prefixes · vocab 24 · max_len 53  
-**Split:** 355,371 train / 88,426 test  
-**Training:** 10 epochs · final loss 1.0866
+475,306 events · 443,797 prefixes · vocab 24 · max_len 53  
+Train 355,371 / Test 88,426 · 10 epochs · final loss 1.0866
 
-**Примечание:** BPI 2017 потребовал fallback в data_loader (lifecycle:transition отсутствует) — это Challenge #5 для Experience Report.
-
----
-
-## Experience Report — материал для paper
-
-Пять задокументированных challenge при vibe coding:
-
-1. **Multi-lifecycle transitions** — BPI 2012 содержит несколько lifecycle transition-ов на событие. Изначальный data loading prompt не учитывал это. Потребовался дополнительный prompt для фильтрации только COMPLETE событий. *Урок: инспектировать датасет перед первым промптом.*
-
-2. **Typo в имени класса** — LISA сгенерировала `SeldAttentionBlock` вместо `SelfAttentionBlock`. Поскольку ручное исправление запрещено правилами, потребовался corrective prompt. *Урок: внимательно проверять сгенерированный код перед интеграцией.*
-
-3. **Sparse padding** — max prefix length 95 создаёт сильно разреженные входные тензоры (большинство префиксов намного короче). *Урок: анализировать распределение длин трейсов заранее.*
-
-4. **Нормализация remaining time** — без нормализации MSE loss нестабилен из-за масштаба значений в секундах. Потребовался дополнительный prompt для добавления нормализации. *Урок: для регрессионных задач всегда нормализовать таргет.*
-
-5. **BPI 2017 lifecycle filter** — BPI 2017 не содержит стандартного `lifecycle:transition == 'COMPLETE'`, поэтому data_loader возвращал 0 событий. Потребовался corrective prompt для добавления fallback-логики (case-insensitive → no filter). *Урок: датасеты из разных источников имеют разные форматы — проверять pipeline на каждом новом датасете.*
+**Финальные результаты (CNN + GRU + RETAIN) — ещё не получены.**
 
 ---
 
-## Ключевые технические детали
+## Experience Report — все challenges
+
+### Chat 1–3 (Emir):
+1. **Multi-lifecycle transitions** — BPI 2012 имеет несколько lifecycle transitions на событие. Первый промпт не фильтровал COMPLETE → corrective prompt. *Урок: инспектировать датасет до написания промпта.*
+2. **Typo `SeldAttentionBlock`** — LISA сгенерировала опечатку в имени класса. Ручное исправление запрещено → corrective prompt. *Урок: проверять сгенерированный код до интеграции.*
+3. **Sparse padding** — max_len 95, большинство трейсов намного короче → плотность входных тензоров низкая. *Урок: анализировать распределение длин заранее.*
+4. **Remaining time нормализация** — MSE loss нестабилен из-за масштаба в секундах → corrective prompt для нормализации. *Урок: для регрессии всегда нормализовать таргет.*
+5. **BPI 2017 lifecycle filter** — data_loader возвращал 0 событий, так как BPI 2017 не использует COMPLETE → corrective prompt с fallback-логикой. *Урок: разные датасеты имеют разные форматы.*
+
+### Интеграция тиммейтов:
+6. **RETAIN → LSTM → RETAIN** — Aizhan переключилась на LSTM без согласования, профессор потребовал вернуться к RETAIN → corrective prompts.
+7. **Дублирование аргументов** — LISA продублировала аргументы функций при добавлении LSTM в run_experiments.py → corrective prompt.
+8. **GRU Embedding размер** — `nn.Embedding(vocab_size)` вместо `(vocab_size+1)` → потенциальный IndexError → corrective prompt.
+9. **GRU missing `return`** — forward() без return statement → corrective prompt.
+10. **GRU r_concat shape mismatch** — reset gate применяется к x_t (embed_dim=64) вместо h (hidden_dim=128) → RuntimeError → corrective prompt (в процессе).
+11. **MSELoss broadcasting** — shape (batch,) vs (batch,1) у нескольких моделей → неправильный градиент → corrective prompts.
+12. **Двойное деление на 86400** — MAE конвертировался в дни дважды → corrective prompt.
+
+---
+
+## Что ещё нужно сделать
+
+### 1. Исправить GRU баг (Ramazan) — срочно
+Corrective prompt: заменить `r_concat = torch.cat([r * x_t, h], dim=1)` на `r_concat = torch.cat([x_t, r * h], dim=1)`
+
+### 2. Финальный запуск экспериментов
+```bash
+python experiments/run_experiments.py
+```
+Ожидаемое время: ~3–4 часа (4 модели × 2 датасета)
+
+### 3. Term Paper (6–8 стр., IEEE two-column)
+Структура:
+1. Abstract (~150 слов)
+2. Introduction
+3. Background (PBPM, prefix encoding, attention, GRU, CNN)
+4. Methodology (4 техники + baseline, детали каждой)
+5. Experiment Setup (датасеты, метрики, 80/20 temporal split)
+6. Results & Discussion (таблицы + графики всех моделей)
+7. **Experience Report** ← special ingredient (12 challenges выше)
+8. Conclusion
+9. References [1]–[7]
+10. Appendix: все LISA-чаты
+
+Каждый раздел помечается именем автора. Без этого — не засчитывается.
+
+### 4. Poster (Canva, DIN A0)
+- 300–500 слов, высокий контраст
+- Акцент: сравнение результатов + vibe coding insights
+
+### 5. Video (10 минут строго)
+- Все 4 участника говорят голосом
+- Структура: краткое intro → результаты → experience с LISA
+
+### 6. Экспорт LISA-чатов
+Каждый экспортирует свои чаты → PDF + JSON → `chat_exports/<имя>/`
+
+### 7. README.md
+
+### 8. ZIP + Moodle (до 7 июня 23:59)
+
+### 9. Peer Review (до 21 июня 23:59)
+
+---
+
+## Референсы
+
+1. Bukhsh, Z.A., Saeed, A., Dijkman, R., van Dongen, B., Kaymak, U. (2021). *ProcessTransformer: Predictive Business Process Monitoring with Transformer Network*. arXiv:2104.00721
+2. Choi, E., Bahadori, M.T., Sun, J., Kulas, J., Schuetz, A., Stewart, W.F. (2016). *RETAIN: An Interpretable Predictive Model for Healthcare using Reverse Time Attention Mechanism*. NeurIPS 29
+3. Pasquadibisceglie, V., Appice, A., Castellano, G., Malerba, D. (2019). *Using Convolutional Neural Networks for Predictive Process Analytics*. ICPM 2019. IEEE
+4. Vaswani, A., Shazeer, N., Parmar, N. et al. (2017). *Attention Is All You Need*. NeurIPS
+5. Rama-Maneiro, E., Vidal, J.C., Lama, M. (2023). *Deep Learning for Predictive Business Process Monitoring*. IEEE TSC
+6. van Dongen, B.F. (2012). *BPI Challenge 2012*. 4TU.ResearchData
+7. van Dongen, B.F. (2017). *BPI Challenge 2017*. 4TU.ResearchData
+
+---
+
+## Технические детали среды
 
 **Среда:** MacBook Air M1 · Anaconda · Python 3.10 · VS Code · PyTorch MPS  
-**Repo:** GitHub (private)  
-**LISA version:** `lisa-flash-03-2026`  
-**pm4py:** только XES загрузка + Petri Net
-
-**Референсы:**
-1. Bukhsh et al. (2021) — ProcessTransformer, arXiv:2104.00721
-2. Tax et al. (2017) — LSTM baseline, DOI:10.1007/978-3-319-59536-8_30
-3. Rama-Maneiro et al. (2023) — Deep Learning for PBPM review, IEEE TSC
-4. Vaswani et al. (2017) — Attention Is All You Need, NeurIPS
-5. van Dongen (2012) — BPI Challenge 2012, 4TU.ResearchData
-6. van Dongen (2017) — BPI Challenge 2017, 4TU.ResearchData
+**Repo:** GitHub (private, Emirkeenz)  
+**LISA version:** `lisa-flash-03-2026`
