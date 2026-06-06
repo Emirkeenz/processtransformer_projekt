@@ -114,7 +114,7 @@ Full per-prefix-length breakdowns and raw predictions are in `experiments/result
 
 ## LISA Vibe Coding
 
-All code in `src/` was generated exclusively via LISA (`lisa-flash-03-2026`). No manual edits were made to source files. All corrections were applied through corrective prompts.
+All code in `src/` and `experiments/run_experiments.py` was generated exclusively via LISA (`lisa-flash-03-2026`). No manual edits were made to source files. All corrections were applied through corrective prompts.
 
 LISA chat exports (PDF + JSON) for each contributor are in `chat_exports/`.  
 LISA model version: see `LISA_MODEL_VERSION.txt`.
