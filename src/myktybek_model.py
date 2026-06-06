@@ -1,85 +1,96 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
 
 class MyktbekModel(nn.Module):
-    def __init__(self, vocab_size, embed_dim=64, num_filters=128, num_activities=10, dropout=0.1):
+    def __init__(self, vocab_size, embed_dim=64, num_activities=None,
+                 filter_sizes=[3, 5, 7], num_filters=128, dropout=0.1):
         super(MyktbekModel, self).__init__()
-        
-        # Embedding layer with padding_idx=0 and num_embeddings=vocab_size+1
-        self.embedding = nn.Embedding(num_embeddings=vocab_size + 1, embedding_dim=embed_dim, padding_idx=0)
-        
-        # Three parallel branches with sliding window convolutions of sizes 3, 5, and 7
-        # Input to conv: (batch, embed_dim, seq_len) after embedding
-        # We use Conv1d with kernel_size for sliding window along time axis
-        self.conv3 = nn.Conv1d(in_channels=embed_dim, out_channels=num_filters, kernel_size=3, padding=1)
-        self.conv5 = nn.Conv1d(in_channels=embed_dim, out_channels=num_filters, kernel_size=5, padding=2)
-        self.conv7 = nn.Conv1d(in_channels=embed_dim, out_channels=num_filters, kernel_size=7, padding=3)
-        
-        # Batch normalization for each branch
-        self.bn3 = nn.BatchNorm1d(num_filters)
-        self.bn5 = nn.BatchNorm1d(num_filters)
-        self.bn7 = nn.BatchNorm1d(num_filters)
-        
-        # Nonlinear activation (ReLU)
-        self.relu = nn.ReLU()
-        
-        # Global max-pooling across time axis for each branch
-        # After convolution, shape is (batch, num_filters, seq_len)
-        # We'll use adaptive max pooling to get fixed size output regardless of sequence length
-        self.pool = nn.AdaptiveMaxPool1d(1)
-        
-        # Dropout layer
+
+        if num_activities is None:
+            num_activities = vocab_size
+
+        # Embedding layer
+        self.embedding = nn.Embedding(vocab_size, embed_dim)
+
+        # Three parallel convolutional branches (kernel sizes 3, 5, 7)
+        self.conv_branch_1 = nn.Sequential(
+            nn.Conv1d(in_channels=embed_dim, out_channels=num_filters,
+                     kernel_size=3, padding=1),
+            nn.BatchNorm1d(num_filters),
+            nn.ReLU(),
+            nn.Conv1d(num_filters, num_filters, kernel_size=3, padding=1),
+            nn.BatchNorm1d(num_filters),
+            nn.ReLU()
+        )
+
+        self.conv_branch_2 = nn.Sequential(
+            nn.Conv1d(in_channels=embed_dim, out_channels=num_filters,
+                     kernel_size=5, padding=2),
+            nn.BatchNorm1d(num_filters),
+            nn.ReLU(),
+            nn.Conv1d(num_filters, num_filters, kernel_size=5, padding=2),
+            nn.BatchNorm1d(num_filters),
+            nn.ReLU()
+        )
+
+        self.conv_branch_3 = nn.Sequential(
+            nn.Conv1d(in_channels=embed_dim, out_channels=num_filters,
+                     kernel_size=7, padding=3),
+            nn.BatchNorm1d(num_filters),
+            nn.ReLU(),
+            nn.Conv1d(num_filters, num_filters, kernel_size=7, padding=3),
+            nn.BatchNorm1d(num_filters),
+            nn.ReLU()
+        )
+
+        # Global max pooling
+        self.global_pool = nn.AdaptiveMaxPool1d(1)
+
+        # Shared feature representation
+        total_features = num_filters * len(filter_sizes)
+        self.shared_fc = nn.Linear(total_features, 256)
+        self.shared_bn = nn.BatchNorm1d(256)
         self.dropout = nn.Dropout(dropout)
-        
-        # Fully connected layers for outputs
-        # After concatenation: 3 * num_filters features
-        self.fc_activity = nn.Linear(3 * num_filters, num_activities)
-        self.fc_time = nn.Linear(3 * num_filters, 1)
-    
+
+        # Output Head 1: Activity Classification
+        self.activity_head = nn.Linear(256, num_activities)
+
+        # Output Head 2: Time Regression (predicts normalized time)
+        self.time_head = nn.Sequential(
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(128, 1)
+        )
+
     def forward(self, x):
-        """
-        Args:
-            x: tensor of shape (batch, seq_len) containing encoded activity integers
-        
-        Returns:
-            activity_logits: tensor of shape (batch, num_activities) for activity classification
-            time_prediction: tensor of shape (batch, 1) for remaining time regression
-        """
-        # Embedding: (batch, seq_len) -> (batch, seq_len, embed_dim)
+        # Embedding
         embedded = self.embedding(x)
-        
-        # Transpose to (batch, embed_dim, seq_len) for Conv1d
         embedded = embedded.transpose(1, 2)
-        
-        # Branch 1: kernel size 3
-        out3 = self.conv3(embedded)
-        out3 = self.bn3(out3)
-        out3 = self.relu(out3)
-        out3 = self.pool(out3)  # (batch, num_filters, 1)
-        out3 = out3.squeeze(-1)  # (batch, num_filters)
-        
-        # Branch 2: kernel size 5
-        out5 = self.conv5(embedded)
-        out5 = self.bn5(out5)
-        out5 = self.relu(out5)
-        out5 = self.pool(out5)  # (batch, num_filters, 1)
-        out5 = out5.squeeze(-1)  # (batch, num_filters)
-        
-        # Branch 3: kernel size 7
-        out7 = self.conv7(embedded)
-        out7 = self.bn7(out7)
-        out7 = self.relu(out7)
-        out7 = self.pool(out7)  # (batch, num_filters, 1)
-        out7 = out7.squeeze(-1)  # (batch, num_filters)
-        
-        # Concatenate all three branches: (batch, 3 * num_filters)
-        concatenated = torch.cat([out3, out5, out7], dim=1)
-        
-        # Apply dropout
-        dropped = self.dropout(concatenated)
-        
-        # Output layers
-        activity_logits = self.fc_activity(dropped)  # (batch, num_activities)
-        time_prediction = self.fc_time(dropped)  # (batch, 1)
-        
-        return activity_logits, time_prediction
+
+        # Parallel convolutional branches
+        branch_1_out = self.conv_branch_1(embedded)
+        branch_2_out = self.conv_branch_2(embedded)
+        branch_3_out = self.conv_branch_3(embedded)
+
+        # Global max pooling
+        pooled_1 = self.global_pool(branch_1_out).squeeze(2)
+        pooled_2 = self.global_pool(branch_2_out).squeeze(2)
+        pooled_3 = self.global_pool(branch_3_out).squeeze(2)
+
+        # Concatenate features
+        combined = torch.cat([pooled_1, pooled_2, pooled_3], dim=1)
+
+        # Shared FC layer
+        shared = self.shared_fc(combined)
+        shared = self.shared_bn(shared)
+        shared = F.relu(shared)
+        shared = self.dropout(shared)
+
+        # Two output heads
+        activity_logits = self.activity_head(shared)
+        remaining_time_normalized = self.time_head(shared)
+
+        return activity_logits, remaining_time_normalized
